@@ -6,7 +6,7 @@
 
 CredGuard is a credential-based Intrusion Detection System (IDS) for Internet of Things (IoT) environments that couples supervised learning with Explainable Artificial Intelligence (XAI). Rather than inspecting packet payloads or network flows, CredGuard operates at the **authentication layer**: it models the behavioural signature of every login attempt — inter-arrival timing, attempt progression, failure ratio, credential structure, and network/geographic origin — and classifies it as `Normal` or `Attack` in real time.
 
-CredGuard is an **end-to-end framework**, not a single model. It spans five stages: construction of a unified authentication dataset (**CredGuardV1**) from five heterogeneous sources, leakage-free behavioural feature engineering, a controlled benchmark of three Machine Learning (ML) and three Deep Learning (DL) architectures, an explainability layer built on SHAP and LIME, and a deployed Flask/PostgreSQL service that executes autonomous mitigation on a physical Raspberry Pi IoT node. Detection does not stop at the login boundary: a **post-login behavioural engine** continues to score the session against the user's own historical baseline, so a stolen credential that survives authentication is still caught in-session.
+CredGuard is an **end-to-end framework**, not a single model. It spans five stages: construction of a unified authentication dataset (**CredGuardV1**) from five heterogeneous sources, leakage-free behavioural feature engineering, a controlled benchmark of three Machine Learning (ML) and three Deep Learning (DL) architectures, an explainability layer built on SHAP and LIME, and a deployed Flask/PostgreSQL service that issues access-control decisions to a physical Raspberry Pi IoT node. Detection does not stop at the login boundary: a **post-login behavioural engine** continues to score the session against the user's own historical baseline, so a stolen credential that survives authentication is still caught in-session.
 
 ---
 
@@ -36,7 +36,7 @@ CredGuard is an **end-to-end framework**, not a single model. It spans five stag
 
 ## How CredGuard Works
 
-Conventional IoT intrusion detection systems are predominantly **flow-based**: they consume packet headers, traffic volumes, or protocol statistics and are trained on general-purpose network datasets such as BoT-IoT, TON\_IoT, or CICIDS. This design is effective against volumetric and protocol-level attacks but is largely blind to the credential layer, where brute-force, credential-stuffing, and account-takeover campaigns occur. A valid username and password pair transmitted over a well-formed session is, from the perspective of a flow-based detector, indistinguishable from legitimate traffic.
+Conventional IoT intrusion detection systems are predominantly **flow-based**: they consume packet headers, traffic volumes, or protocol statistics and are trained on general-purpose network datasets such as BoT-IoT, TON_IoT, or CICIDS. This design is effective against volumetric and protocol-level attacks but is largely blind to the credential layer, where brute-force, credential-stuffing, and account-takeover campaigns occur. A valid username and password pair transmitted over a well-formed session is, from the perspective of a flow-based detector, indistinguishable from legitimate traffic.
 
 CredGuard closes this gap by treating the **authentication event itself** as the unit of analysis. Each login attempt is converted into a behavioural feature vector that captures *how* the credential was presented rather than *what* was transmitted, and the resulting vector is classified, explained, and acted upon within a single pipeline.
 
@@ -52,7 +52,7 @@ The pipeline comprises four operational layers:
 
 **3. Detection and explanation layer.** The feature vector is scored by the deployed XGBoost classifier. Every decision is accompanied by an explanation: SHAP supplies the global attribution structure of the model, while LIME produces a local, per-decision rationale that is surfaced directly in the analyst dashboard.
 
-**4. Response layer.** The backend translates the classification into an enforcement action — grant, challenge, or block — and dispatches it to the Raspberry Pi node, which executes the decision on the device. Analytical processing remains entirely on the server, keeping the constrained IoT device responsible only for execution.
+**4. Response layer.** The backend translates the classification into a **grant or deny** decision and sends it to the Raspberry Pi node, which executes the decision on the device. Analytical processing remains entirely on the server, keeping the constrained IoT device responsible only for executing the decision it receives — it does not perform local inference.
 
 ### Post-login behavioural monitoring
 
@@ -62,28 +62,30 @@ Authentication alone is an insufficient security boundary, since a compromised c
   <img src="Figures/behaviour_engine.svg" alt="Post-login behavioural risk scoring" width="760">
 </p>
 
-Six indicators are evaluated — mean previous session duration, live-stream watching rate, camera usage rate, mean camera interaction count, full-screen usage rate, and mean full-screen usage — and combined into a composite **Risk Score** on a 0–100 scale, mapped to `Low`, `Medium`, and `High` risk bands. Sessions reaching the high band are terminated or blocked. Where a user has insufficient history to support a baseline, the engine falls back to a rule-based heuristic, so cold-start accounts are never left unscored.
+Six indicators are evaluated — average previous session duration, live-stream watching rate, camera usage rate, average camera interaction count, full-screen usage rate, and average full-screen usage — and combined into a composite **Risk Score** on a 0–100 scale, mapped to `Low`, `Medium`, and `High` risk bands. Sessions reaching the high band may be terminated or blocked. Where a user has insufficient session history to support a personal baseline, the engine falls back to rule-based heuristics (e.g., a short session with no interaction raises the score; normal interaction lowers it), so cold-start accounts are still scored.
 
 ### Why this matters
 
-The combination yields a detector that is **accurate, fast, interpretable, and enforcing** at once. Detection latency remains low enough for real-time use on constrained hardware; each alert carries a human-readable justification rather than an opaque score; and the system acts on its own conclusions instead of merely reporting them.
+The combination yields a detector that is accurate, fast, and interpretable: detection latency is low enough for real-time use on constrained hardware, and each alert carries a human-readable justification (via SHAP/LIME) rather than an opaque score.
 
 ---
 
 ## How CredGuard Compares
 
-Existing work in this space tends to occupy one of three positions. **Signature-based systems** (Snort, Suricata) are precise but cannot generalise to unseen credential-attack variants. **ML- and DL-based IoT IDSs** generalise well but are trained on flow-level datasets and remain opaque at the decision level. **XAI-enhanced IDSs** restore interpretability but are typically evaluated offline, on general network traffic, without a deployed response path.
+Our literature review (see the project report, Chapter 1, Table 1.2) grouped prior work into five categories: traditional signature-based approaches, ML-based methods, DL-based methods, XAI-enhanced approaches, and existing public IoT datasets. Across that review, a consistent gap emerged: **no reviewed work combined a purpose-built credential/authentication-layer dataset with both global and local explainability (SHAP *and* LIME) and a real-time, low-latency deployment path.** Signature-based systems (e.g., a lightweight signature-based IDS evaluated on NSL-KDD) cannot generalise beyond known patterns; ML/DL studies we reviewed (e.g., RF-based fake-login detection, XGBoost + SHAP/LIME for IoMT, DNN/CNN/LSTM-based explainable IDS variants) improved accuracy and, in several cases, added XAI — but were evaluated on general network-traffic datasets (NSL-KDD, CICIDS2017, UNSW-NB15, TON_IoT, Bot-IoT) rather than a dataset built specifically around authentication/credential behaviour, and none of the reviewed studies reported a deployed, physical-device response path.
 
-CredGuard is, to our knowledge, the only framework that combines all six capabilities below within a single deployed system.
+The following table summarises that comparison, based directly on the studies reviewed in the report:
 
-| Capability | Signature IDS | Flow-based ML/DL IDS | XAI-enhanced IDS | **CredGuard** |
+| Capability | Signature-based IDS | ML/DL-based IDS (reviewed studies) | XAI-enhanced IDS (reviewed studies) | **CredGuard** |
 | --- | :---: | :---: | :---: | :---: |
-| Credential-layer modelling | ✗ | ✗ | ✗ | **✓** |
+| Credential/authentication-layer modelling | ✗ | ✗ | ✗ | **✓** |
 | Purpose-built authentication dataset | ✗ | ✗ | ✗ | **✓** (CredGuardV1) |
-| Controlled ML vs. DL benchmark | ✗ | partial | partial | **✓** (6 architectures) |
-| Global **and** local explainability | ✗ | ✗ | partial | **✓** (SHAP + LIME) |
+| Controlled ML vs. DL benchmark (6 architectures) | ✗ | partial (typically 1–3 models) | partial | **✓** |
+| Global **and** local explainability (SHAP + LIME) | ✗ | ✗ | partial (some use only SHAP, or only SHAP+LIME on network traffic) | **✓** |
 | Post-login behavioural monitoring | ✗ | ✗ | ✗ | **✓** |
-| Autonomous response on physical IoT hardware | partial | ✗ | ✗ | **✓** (Raspberry Pi) |
+| Response executed on physical IoT hardware | — | not reported | not reported | **✓** (Raspberry Pi) |
+
+> This table reflects our own reading of the specific studies cited in the report's related-work chapter, not an exhaustive survey of the field. Please re-verify each cell against the cited papers before including this comparison in a manuscript.
 
 ### Numeric benchmark
 
@@ -102,11 +104,11 @@ All six architectures were trained and evaluated on the same CredGuardV1 partiti
   <img src="Figures/model_benchmark.svg" alt="Comparative model performance on CredGuardV1" width="780">
 </p>
 
-The deep architectures achieve the strongest recall — CNN reaches 86.60%, consistent with their capacity to extract higher-order feature interactions — but they do so at a training cost between 32× and 46× that of XGBoost, and none exceeds it on accuracy. SVM is the weakest configuration on every quality metric. **XGBoost was therefore selected for deployment**, on the basis of the accuracy-to-latency trade-off rather than accuracy alone: it attains the highest accuracy in the study while training in 82 seconds and scoring fast enough for real-time use on constrained hardware. Random Forest attains marginally higher precision and F1, but at roughly seven times the training cost and with heavier inference, which is decisive in a real-time setting.
+The deep architectures achieve the strongest recall — CNN reaches 86.60%, consistent with their capacity to extract higher-order feature interactions — but they do so at a training cost between roughly **7× (Random Forest) and 32–46× (CNN/DNN/RNN)** that of XGBoost, and none exceeds it on accuracy. SVM is the weakest configuration on every quality metric. **XGBoost was therefore selected for deployment**, on the basis of the accuracy-to-latency trade-off rather than accuracy alone: it attains the highest accuracy in the study while training in 82 seconds and scoring fast enough for real-time use on constrained hardware. Random Forest attains marginally higher precision and F1, but at roughly seven times the training cost, which is decisive in a real-time setting.
 
 > An LSTM architecture was implemented but excluded from the reported comparison. Its sequential processing imposed a prohibitive training cost without a corresponding accuracy gain, since the engineered feature set already encodes temporal structure explicitly (inter-arrival statistics, attempt progression, cyclical hour encoding) rather than leaving it to be recovered from raw sequences.
 
-The table and figure regenerate from [`Data/model_benchmark.csv`](Data/model_benchmark.csv) with `python3 Scripts/plot_model_benchmark.py`.
+*(If you add `Data/model_benchmark.csv` and `Scripts/plot_model_benchmark.py`, the table/figure above can be regenerated directly from released data — update this line once those files exist in your repository.)*
 
 ---
 
@@ -166,7 +168,7 @@ Session-level monitoring against a per-user baseline, combining six behavioural 
 
 ### 6. Deployed IoT integration
 
-A Raspberry Pi 3 Model B+ with a Camera Module v2.1 (CSI, 640 × 480) serves as the physical IoT node, providing live streaming, on-demand snapshots, and timestamped recording. The node communicates with the Flask backend over HTTP and acts as the **execution layer** for access-control decisions, maintaining a clear separation between analysis on the server and enforcement on the device.
+A Raspberry Pi 3 Model B+ with a Camera Module v2.1 (connected via CSI, 640 × 480 video configuration) serves as the physical IoT node, providing live streaming and on-demand snapshot capture. The node communicates with the Flask backend and acts as the **execution layer** for access-control decisions, maintaining a clear separation between analysis on the server and enforcement on the device.
 
 ---
 
@@ -180,11 +182,9 @@ A Raspberry Pi 3 Model B+ with a Camera Module v2.1 (CSI, 640 × 480) serves as 
 
 ```bash
 pip install -r requirements.txt
-# (scikit-learn, xgboost, tensorflow, shap, lime, pandas, numpy,
-#  flask, flask-sqlalchemy, psycopg2-binary, matplotlib, seaborn, tqdm)
 ```
 
-- For the IoT node (Raspberry Pi OS): `picamera2`, `opencv-python`, `flask`
+- For the IoT node (Raspberry Pi OS): a Python camera interface library compatible with your OS/camera stack, plus `flask` for the device-side service
 - Optional: an [IPinfo](https://ipinfo.io) API token for ASN and geolocation enrichment
 
 ### Setup
@@ -220,38 +220,27 @@ python3 Scripts/init_db.py
 
 ## Usage
 
+> ⚠️ The commands below describe the intended workflow based on the project report. Update each filename/flag to match your actual scripts once they are uploaded — do not present these as already-implemented unless they match your real code.
+
 ### 1. Build the CredGuardV1 Dataset
 
 Aligns the five raw sources to the common schema, cleans and enriches them, and applies group-based stratified sampling.
-
-#### Command:
 
 ```bash
 python3 Scripts/build_dataset.py -i Data/raw/ -o Data/CredGuardV1.csv [--sample-size 1003030]
 ```
 
-#### Arguments:
-
-- `-i/--input`: directory containing the raw source files.
-- `-o/--output`: path for the unified master dataset.
-- `--sample-size`: target record count after balancing (default: `1003030`).
-- `--ipinfo-token`: optional; overrides `IPINFO_TOKEN`.
-
 ### 2. Behavioural Feature Engineering
 
 Transforms the standardised dataset into the leakage-free behavioural feature matrix.
-
-#### Command:
 
 ```bash
 python3 Scripts/feature_engineering.py -i Data/CredGuardV1.csv -o Data/CredGuardV1_features.csv
 ```
 
-All temporal statistics are computed with expanding windows over past events only. The script asserts this property and will fail rather than emit a leaking feature.
+All temporal statistics are computed with expanding windows over past events only.
 
 ### 3. Train the Machine Learning Models
-
-#### Command:
 
 ```bash
 python3 Scripts/train_ml.py --model xgboost --data Data/CredGuardV1_features.csv --out Models/
@@ -277,19 +266,15 @@ python3 Scripts/train_ml.py --model svm     --data Data/CredGuardV1_features.csv
 
 ### 4. Train the Deep Learning Models
 
-#### Command:
-
 ```bash
 python3 Scripts/train_dl.py --model cnn --data Data/CredGuardV1_features.csv --out Models/
 python3 Scripts/train_dl.py --model rnn --data Data/CredGuardV1_features.csv --out Models/
 python3 Scripts/train_dl.py --model dnn --data Data/CredGuardV1_features.csv --out Models/
 ```
 
-Loss and accuracy curves are written to `Figures/` for convergence inspection. Reference notebooks for all six architectures are available in [`Notebooks/`](Notebooks/).
+Loss and accuracy curves are written to `Figures/` for convergence inspection. Reference notebooks for all six architectures are available in [`Notebooks/`](Notebooks/) — these correspond to the notebooks already cited in the project report (XGB_Model.ipynb, RF_Model.ipynb, SVM_Model.ipynb, CNN_Model.ipynb, RNN_Model.ipynb, DNN_Model.ipynb).
 
 ### 5. Generate XAI Explanations (SHAP / LIME)
-
-#### Command:
 
 ```bash
 # Global attribution (bar + beeswarm)
@@ -303,51 +288,38 @@ python3 Scripts/explain_lime.py --model Models/xgboost.json \
 
 ### 6. Run the Detection Backend
 
-Starts the Flask service: authentication endpoints, real-time scoring, the analyst dashboard, and the mitigation dispatcher.
-
-#### Command:
+Starts the Flask service: authentication endpoints, real-time scoring, and the analyst dashboard.
 
 ```bash
 python3 app.py --host 0.0.0.0 --port 5000
 ```
 
-The dashboard exposes live login telemetry, the alert queue, blocked-account management, and the SHAP/LIME analytics panel.
-
 ### 7. Deploy the IoT Node (Raspberry Pi)
 
 Run on the Raspberry Pi itself:
 
-#### Command:
-
 ```bash
-python3 IoT/camera_server.py --resolution 640x480 --port 8000
+python3 IoT/camera_server.py
 ```
 
-Endpoints: `/stream` (live MJPEG), `/snapshot` (still frame), `/record/start`, `/record/stop`. Recordings are stored locally with timestamp-based identifiers. Set `RASPBERRY_PI_HOST` on the backend so it can reach the node.
+> Replace this with your actual entry point and arguments. Document your real endpoints/routes here once finalized — do not publish endpoint names that don't exist in your code.
 
 ### 8. Post-Login Behavioural Risk Scoring
 
 Scores an active session against the user's historical baseline.
 
-#### Command:
-
 ```bash
 python3 Scripts/behaviour_risk.py --session-id <SESSION_ID>
 ```
 
-#### Output:
+#### Example output (illustrative — match to your actual return schema):
 
 ```json
 {
   "session_id": "3f9c1a24",
   "risk_score": 78,
   "risk_level": "High",
-  "triggered_indicators": [
-    "session_duration_below_25pct_of_baseline",
-    "live_stream_not_watched",
-    "no_camera_interaction"
-  ],
-  "action": "terminate_session"
+  "action": "flag_for_review"
 }
 ```
 
@@ -370,18 +342,20 @@ Highlights:
 
 ## Data Availability
 
-In line with open-science principles, this repository releases the artefacts required to reproduce every quantitative result reported in the paper:
+In line with open-science principles, we recommend releasing the artefacts required to reproduce the quantitative results reported in the project:
 
-- [`Data/model_benchmark.csv`](Data/model_benchmark.csv) — per-model performance metrics and training times (paper Table 5.14).
-- [`Data/feature_schema.md`](Data/feature_schema.md) — the complete feature specification with definitions and dtypes.
-- [`Data/shap_global_importance.csv`](Data/shap_global_importance.csv) — mean absolute SHAP values per feature.
-- [`Notebooks/`](Notebooks/) — training notebooks for all six architectures.
+- Per-model performance metrics and training times (report Table 5.14).
+- The complete feature specification with definitions and dtypes.
+- Mean absolute SHAP values per feature (if exported from your notebooks).
+- Training notebooks for all six architectures (see [`Notebooks/`](Notebooks/)).
 
-The CredGuardV1 corpus is derived from honeypot and authentication logs containing source IP addresses and credential material. It is therefore released in **aggregated and anonymised** form, with IP addresses truncated and credential strings hashed. The full corpus is available from the corresponding author on reasonable request, subject to responsible-disclosure and data-protection constraints.
+> The CredGuardV1 corpus is derived from honeypot and authentication logs containing source IP addresses and credential material. **Before publishing any raw or processed data**, apply and document your actual anonymisation steps (e.g., IP truncation, credential hashing) — do not claim anonymisation has been applied unless it genuinely has been. If the full corpus cannot be released due to third-party licensing on the source datasets (particularly the RBA and Mirai-credential sources), state that explicitly and offer it "on reasonable request" only if that is genuinely something your team can fulfil.
 
 ---
 
 ## Directory Structure
+
+> The layout below is a **suggested** organization for your repository, not a description of files that already exist. Adjust it to match what you actually upload.
 
 ```
 CredGuard/
@@ -393,32 +367,19 @@ CredGuard/
 │   ├── explain_shap.py               # Global attribution (bar + beeswarm)
 │   ├── explain_lime.py               # Local, per-decision explanations
 │   ├── behaviour_risk.py             # Post-login risk scoring engine
-│   ├── plot_model_benchmark.py       # Renders the comparative benchmark figure
-│   ├── plot_confusion_matrices.py    # Renders per-model confusion matrices
 │   └── init_db.py                    # PostgreSQL schema initialisation
-├── Backend/
-│   ├── app.py                        # Flask application entry point
-│   ├── db.py                         # SQLAlchemy database object
-│   ├── models.py                     # ORM table definitions
-│   ├── detection.py                  # Real-time inference and mitigation dispatch
-│   └── routes/                       # Authentication, dashboard, analytics endpoints
-├── Frontend/
-│   ├── templates/                    # Admin dashboard and device-owner interface
-│   └── static/                       # Stylesheets, scripts, assets
 ├── IoT/
-│   ├── camera_server.py              # Raspberry Pi camera service
-│   └── decision_executor.py          # Executes backend access-control decisions
+│   └── camera_server.py              # Raspberry Pi camera + decision-execution service
 ├── Notebooks/
-│   ├── XGB_Model.ipynb               # XGBoost training and tuning
-│   ├── RF_Model.ipynb                # Random Forest training
-│   ├── SVM_Model.ipynb               # SVM training
-│   ├── CNN_Model.ipynb               # CNN training
-│   ├── RNN_Model.ipynb               # RNN training
-│   └── DNN_Model.ipynb               # DNN training
+│   ├── XGB_Model.ipynb
+│   ├── RF_Model.ipynb
+│   ├── SVM_Model.ipynb
+│   ├── CNN_Model.ipynb
+│   ├── RNN_Model.ipynb
+│   └── DNN_Model.ipynb
 ├── Data/
-│   ├── model_benchmark.csv           # Per-model metrics (paper Table 5.14)
-│   ├── feature_schema.md             # Feature specification
-│   └── shap_global_importance.csv    # Mean absolute SHAP values
+│   ├── model_benchmark.csv           # Per-model metrics (report Table 5.14)
+│   └── feature_schema.md             # Feature specification
 ├── Models/                           # Serialised trained models (gitignored)
 ├── Figures/
 │   ├── CredGuard.jpg                 # Project banner
