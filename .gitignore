@@ -2,10 +2,10 @@
 Models/*
 !Models/.gitkeep
 
-# Raw and derived datasets (not published)
+# Dataset files
 Data/raw/
-Data/CredGuardV1.csv
-Data/CredGuardV1_features.csv
+Data/CredGuard_IoT.csv
+Data/CredGuard_IoT_features.csv
 
 # Local results and recordings
 results/
