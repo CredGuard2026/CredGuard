@@ -139,6 +139,18 @@ Two XAI techniques are used:
 
 These techniques provide interpretable information about model classification results and support analysis of why an authentication attempt is classified as Normal or Attack.
 
+### SHAP Analysis
+
+![Global SHAP Feature Importance](Figures/Global_SHAP.jpg)
+
+![SHAP Attack Class](Figures/SHAP_Attack.png)
+
+![SHAP Normal Class](Figures/SHAP_Normal.png)
+
+### LIME Analysis
+
+![LIME Explanation](Figures/LIME_Explanation.jpg)
+
 ---
 
 ## Post-Login User Behaviour Analysis
