@@ -1,30 +1,32 @@
 # CredGuard
 
-## Credential-Based Intrusion Detection System Using Explainable AI for IoT
+## Credential-Based Intrusion Detection System Using Explainable AI (XAI) for IoT Environments
 
 CredGuard is a credential-based intrusion detection system designed for IoT environments. The system analyzes authentication attempts using Machine Learning (ML), Deep Learning (DL), and Explainable Artificial Intelligence (XAI) techniques to detect potentially malicious access attempts and support secure access control.
 
-The system architecture consists of an IoT device, a backend server, a web application, and a PostgreSQL database. A Raspberry Pi connected to a Camera Module v2.1 is used as the IoT device. Authentication-related information, including IP address, username, password, and timestamp, is collected and transmitted to the backend server for processing and analysis.
+The system consists of an IoT device, a backend server, a PostgreSQL database, and a web-based interface. A Raspberry Pi connected to a Camera Module v2.1 collects authentication-related information, including IP address, username, password, and timestamp, and transmits the data to the backend server for processing and analysis.
 
-The backend performs preprocessing and feature extraction and uses pre-trained ML and DL models to analyze authentication attempts. XAI techniques are used to improve the interpretability of model decisions. Based on the analysis results, an access-control decision is generated and communicated to the IoT device and the web application.
+![CredGuard Architecture](Figures/CredGuard_Architecture.png)
+
+*Figure 1. CredGuard system architecture.*
 
 ---
 
 ## System Architecture
 
-The main components of CredGuard are:
+The main components of CredGuard include:
 
-- Raspberry Pi and Camera Module v2.1 as the IoT device.
-- Backend server for data processing, feature extraction, model inference, and system logic.
-- PostgreSQL database for storing user information, authentication attempts, model results, security actions, and related system data.
-- Web application interfaces for the Admin and Device Owner roles.
-- Machine Learning and Deep Learning models for authentication analysis.
-- XAI techniques, including SHAP and LIME, for interpreting model predictions.
+- **IoT Device:** A Raspberry Pi connected to a Camera Module v2.1.
+- **Backend Server:** Responsible for data processing, preprocessing, feature extraction, model analysis, and decision generation.
+- **Machine Learning and Deep Learning Models:** Used to classify authentication attempts as Normal or Attack.
+- **Explainable AI:** SHAP and LIME are used to interpret model predictions.
+- **PostgreSQL Database:** Stores user information, login attempts, model results, security actions, IoT-related data, and post-login behaviour records.
+- **Web Application:** Provides interfaces for the Device Owner and Administrator.
 
 The system supports two primary user roles:
 
-- **Admin:** monitors system activity, users, model performance, and security-related information.
-- **Device Owner:** interacts with the system through the web application and uses the protected IoT device.
+- **Admin:** Monitors system activity, users, model results, and security-related information.
+- **Device Owner:** Initiates authentication and interacts with the protected IoT resource through the web application.
 
 ---
 
@@ -32,17 +34,17 @@ The system supports two primary user roles:
 
 CredGuard IoT is the integrated dataset developed for the project.
 
-The dataset was constructed by integrating five authentication- and attack-related datasets:
+The dataset was constructed by integrating five authentication- and intrusion-related data sources:
 
 1. SSH Honeypot Logs
-2. Medium-Interaction SSH Honeypot
+2. Medium-Interaction SSH Honeypot (Cowrie)
 3. Synthetic Web Authentication Logs
-4. RBA Authentication
-5. Brute-Force Attempt
+4. Risk-Based Authentication (RBA)
+5. SSH Brute-Force Attempt Dataset
 
-The integrated dataset was developed to provide authentication-related data suitable for credential-based intrusion detection.
+The integrated dataset provides authentication-related information used for credential-based intrusion detection.
 
-The dataset contains authentication and contextual features such as:
+The dataset includes features such as:
 
 - Timestamp
 - Source IP address
@@ -51,32 +53,42 @@ The dataset contains authentication and contextual features such as:
 - ASN
 - Location
 - Authentication status
-- Label
 - Source
-- IP type
-- Inter-arrival time (IAT)
+- Label
+- Inter-arrival time
 - Login attempts
 - Failed attempts
 - Failure ratio
-- Mean IAT
-- Standard deviation of IAT
+- Mean inter-arrival time
+- Standard deviation of inter-arrival time
 - Password length
 - Password complexity
 - Day of week
 - Hour
 - Cyclic time features
 
-IP information is enriched using ASN and geographic location information derived from the source IP address.
+ASN and geographic location information are obtained from the source IP address using the IPinfo service.
 
 ---
 
-## Feature Engineering
+## Data Processing and Feature Engineering
 
-Temporal and behavioral features are generated from authentication activity.
+The data processing pipeline includes schema alignment, integration of heterogeneous sources, status normalization, duplicate removal, critical-field filtering, credential completion, network enrichment, and temporal standardization.
 
-The feature-engineering process includes inter-arrival time, cumulative mean and standard deviation of inter-arrival time, login-attempt progression, and failure ratio.
+Temporal and behavioural features are generated from ordered authentication attempts.
 
-Expanding-window calculations are used for temporal features to avoid using future information when constructing features for earlier authentication attempts.
+The feature-engineering process includes:
+
+- Inter-arrival time (IAT)
+- Mean and standard deviation of inter-arrival time
+- Login-attempt progression
+- Failure ratio
+- Password length
+- Password complexity
+- Cyclic hour encoding using sine and cosine transformations
+- ASN and geographic location
+
+Temporal features are calculated using historical information associated with the source IP to avoid using future information during feature construction.
 
 ---
 
@@ -93,9 +105,13 @@ The evaluated models are:
 - Recurrent Neural Network (RNN)
 - Deep Neural Network (DNN)
 
-The dataset is divided into training, validation, and test sets using a 70/15/15 split.
+The dataset is partitioned into:
 
-The attack class is treated as the positive class, while normal authentication activity is treated as the negative class.
+- **70% Training**
+- **15% Validation**
+- **15% Testing**
+
+`Attack` is treated as the positive class and `Normal` as the negative class.
 
 ### Model Performance
 
@@ -103,12 +119,14 @@ The attack class is treated as the positive class, while normal authentication a
 |---|---:|---:|---:|---:|---:|
 | XGBoost | 82.29% | 85.06% | 75.45% | 79.97% | 82 |
 | Random Forest | 82.03% | 86.90% | 76.02% | 81.10% | 585 |
-| SVM | 71.21% | 75.10% | 64.62% | 69.47% | 54 |
-| CNN | 80.50% | 77.55% | 86.60% | 81.82% | 2640 |
+| SVM | 71.21% | 75.10% | 64.62% | 69.47% | 54.43 |
+| CNN | 80.50% | 77.55% | 86.60% | 81.82% | 2640.02 |
 | RNN | 80.94% | 79.04% | 84.90% | 81.87% | 3794 |
 | DNN | 80.22% | 78.07% | 84.79% | 81.29% | 2857 |
 
 Based on the reported evaluation, XGBoost was selected as the final model considering the balance between predictive performance and computational efficiency.
+
+An LSTM model was also implemented but excluded from the reported model comparison because of its sequential processing requirements and longer training time.
 
 ---
 
@@ -116,59 +134,65 @@ Based on the reported evaluation, XGBoost was selected as the final model consid
 
 CredGuard incorporates Explainable AI techniques to improve the interpretability of model predictions.
 
-Two XAI methods are used:
+Two XAI techniques are used:
 
-- **SHAP (SHapley Additive exPlanations):** used to analyze feature contributions to model predictions and global feature importance.
-- **LIME (Local Interpretable Model-Agnostic Explanations):** used to provide local explanations for individual predictions.
+- **SHAP (SHapley Additive exPlanations):** Used to analyze feature contributions and global feature importance.
+- **LIME (Local Interpretable Model-Agnostic Explanations):** Used to provide local explanations for individual predictions.
 
-These techniques are applied to help interpret why an authentication attempt is classified as normal or potentially malicious.
+These techniques provide interpretable information about model classification results and support analysis of why an authentication attempt is classified as Normal or Attack.
 
 ---
 
 ## Post-Login User Behaviour Analysis
 
-In addition to authentication-based detection, CredGuard includes post-login user behaviour analysis.
+In addition to authentication-based detection, CredGuard performs post-login user behaviour analysis.
 
-The system monitors user behaviour after authentication and uses historical behaviour when sufficient data is available. Rule-based heuristics are also used when historical data is not sufficient.
+After successful authentication, the system continuously monitors user behaviour during the session. The analysis considers activities such as session duration, live-stream viewing, camera interactions, and full-screen usage.
 
-The system calculates a risk score from 0 to 100 and categorizes the resulting risk as:
+When sufficient historical data are available, the system constructs a behavioural baseline for the user and compares the current session with the user's previous behaviour. When historical data are insufficient, rule-based heuristics are used to estimate the risk level.
 
-- Low Risk
-- Medium Risk
-- High Risk
+The system computes a Risk Score ranging from 0 to 100 and classifies the session into:
 
-The post-login analysis considers behavioural indicators such as session duration, live-stream watching activity, camera usage, camera interaction frequency, and full-screen usage.
+- **Low Risk:** Normal behaviour
+- **Medium Risk:** Suspicious behaviour
+- **High Risk:** Abnormal and high-risk behaviour
 
-High-risk behaviour may result in the session being terminated or blocked according to the system's decision process.
+High-risk sessions may be terminated or blocked according to the system's decision process.
 
 ---
 
 ## IoT Integration
 
-The IoT component consists of a Raspberry Pi connected to a Camera Module v2.1.
+The IoT component consists of a Raspberry Pi 3 Model B+ connected to a Raspberry Pi Camera Module v2.1.
 
-The Raspberry Pi collects authentication-related information and communicates with the backend server. The backend processes the received information and generates an access-control decision.
+The Raspberry Pi collects authentication-related information and communicates with the backend server. The backend performs the required processing and analysis and generates an access-control decision.
 
-The resulting decision is transmitted to the Raspberry Pi and the web application, allowing the decision to be enforced on the IoT device and reflected in the web interface.
+The resulting decision is communicated to the IoT device and the web application. The Raspberry Pi executes the access-control decision received from the backend.
+
+![CredGuard IoT Testbed](Figures/CredGuard_Testbed.png)
+
+*Figure 2. CredGuard IoT testbed.*
+
+The IoT implementation also supports live video streaming, image snapshot capture, and video recording through the Raspberry Pi Camera Module.
 
 ---
 
 ## Database
 
-PostgreSQL is used as the project's database.
+PostgreSQL is used as the project's database and is integrated with the Flask backend through Flask-SQLAlchemy.
 
 The database stores information related to:
 
 - User accounts
 - Login attempts
-- Extracted features
-- Model results
+- Model predictions
 - Security actions
-- IoT data
-- Post-login behaviour data
-- Security logs
+- IoT device data
+- Post-login behaviour
+- User activity records
+- Behaviour-related explanations
 
-Flask is used for the backend and application logic, with Flask-SQLAlchemy used for database interaction.
+Passwords are not stored in plaintext. Password hashing and verification are used for user authentication.
 
 ---
 
@@ -177,19 +201,19 @@ Flask is used for the backend and application logic, with Flask-SQLAlchemy used 
 The project uses the following technologies and tools:
 
 - Python
-- Flask
-- PostgreSQL
-- Flask-SQLAlchemy
 - Scikit-learn
 - TensorFlow / Keras
 - XGBoost
 - SHAP
 - LIME
-- Raspberry Pi
-- Raspberry Pi Camera Module v2.1
+- Flask
+- Flask-SQLAlchemy
+- PostgreSQL
 - Jupyter
 - Google Colab
 - Kaggle
+- Raspberry Pi
+- Raspberry Pi Camera Module v2.1
 
 ---
 
@@ -205,6 +229,21 @@ CredGuard was developed by:
 - Rahaf Ahmed Alkhulaifi
 
 **Supervisor:** Prof. Fatemah Mordhi Alharbi
+
+---
+
+## Repository Contents
+
+The repository contains the project documentation, dataset, model development notebooks, figures, and supporting files.
+
+- `Data/` — CredGuard IoT dataset and related data files
+- `Figures/` — Project figures and visual materials
+- `Scripts/` — Model development and training notebooks
+- `README.md` — Project overview and documentation
+- `REPRODUCIBILITY.md` — Reproducibility details
+- `requirements.txt` — Python package dependencies
+- `CITATION.cff` — Citation metadata
+- `LICENSE` — Project license
 
 ---
 
