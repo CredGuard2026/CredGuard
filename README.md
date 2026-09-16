@@ -8,8 +8,6 @@ The system consists of an IoT device, a backend server, a PostgreSQL database, a
 
 ![CredGuard Architecture](Figures/CredGuard_Architecture.jpg)
 
-*Figure 1. CredGuard system architecture.*
-
 ---
 
 ## System Architecture
@@ -170,8 +168,6 @@ The Raspberry Pi collects authentication-related information and communicates wi
 The resulting decision is communicated to the IoT device and the web application. The Raspberry Pi executes the access-control decision received from the backend.
 
 ![CredGuard IoT Testbed](Figures/CredGuard_Testbed.png)
-
-*Figure 2. CredGuard IoT testbed.*
 
 The IoT implementation also supports live video streaming, image snapshot capture, and video recording through the Raspberry Pi Camera Module.
 
