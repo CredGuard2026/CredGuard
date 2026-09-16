@@ -6,7 +6,7 @@ CredGuard is a credential-based intrusion detection system designed for IoT envi
 
 The system consists of an IoT device, a backend server, a PostgreSQL database, and a web-based interface. A Raspberry Pi connected to a Camera Module v2.1 collects authentication-related information, including IP address, username, password, and timestamp, and transmits the data to the backend server for processing and analysis.
 
-![CredGuard Architecture](Figures/CredGuard_Architecture.jpg)
+<img src="Figures/CredGuard_Architecture.jpg" alt="CredGuard Architecture" width="850">
 
 ---
 
@@ -141,15 +141,15 @@ These techniques provide interpretable information about model classification re
 
 ### SHAP Analysis
 
-![Global SHAP Feature Importance](Figures/Global_SHAP.jpg)
+<img src="Figures/Global_SHAP.jpg" alt="Global SHAP Feature Importance" width="700">
 
-![SHAP Attack Class](Figures/SHAP_Attack.png)
+<img src="Figures/SHAP_Attack.png" alt="SHAP Attack Class" width="700">
 
-![SHAP Normal Class](Figures/SHAP_Normal.png)
+<img src="Figures/SHAP_Normal.png" alt="SHAP Normal Class" width="700">
 
 ### LIME Analysis
 
-![LIME Explanation](Figures/LIME_Explanation.jpg)
+<img src="Figures/LIME_Explanation.jpg" alt="LIME Explanation" width="700">
 
 ---
 
@@ -179,7 +179,7 @@ The Raspberry Pi collects authentication-related information and communicates wi
 
 The resulting decision is communicated to the IoT device and the web application. The Raspberry Pi executes the access-control decision received from the backend.
 
-![CredGuard IoT Testbed](Figures/CredGuard_Testbed.png)
+<img src="Figures/CredGuard_Testbed.png" alt="CredGuard IoT Testbed" width="850">
 
 The IoT implementation also supports live video streaming, image snapshot capture, and video recording through the Raspberry Pi Camera Module.
 
