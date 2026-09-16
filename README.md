@@ -149,9 +149,9 @@ These techniques provide interpretable information about model classification re
 
 ### LIME Analysis
 
-<img src="Figures/LIME_Explanation.jpg" alt="LIME Explanation" width="700">
+<img src="Figures/LIME_Explanation.jpg" alt="LIME Attack Explanation" width="700">
 
----
+<img src="Figures/LIME_Normal.jpg" alt="LIME Normal Explanation" width="700">
 
 ## Post-Login User Behaviour Analysis
 
