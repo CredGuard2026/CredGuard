@@ -6,7 +6,7 @@ CredGuard is a credential-based intrusion detection system designed for IoT envi
 
 The system consists of an IoT device, a backend server, a PostgreSQL database, and a web-based interface. A Raspberry Pi connected to a Camera Module v2.1 collects authentication-related information, including IP address, username, password, and timestamp, and transmits the data to the backend server for processing and analysis.
 
-![CredGuard Architecture](Figures/CredGuard_Architecture.png)
+![CredGuard Architecture](Figures/CredGuard_Architecture.jpg)
 
 *Figure 1. CredGuard system architecture.*
 
