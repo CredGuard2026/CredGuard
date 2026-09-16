@@ -1,1 +1,23 @@
+cff-version: 1.2.0
 
+title: "CredGuard: Credential-Based Intrusion Detection System Using Explainable AI (XAI) for IoT Environments"
+
+authors:
+  - family-names: Alharbi
+    given-names: Fatemah
+  - family-names: Alamri
+    given-names: Renad
+  - family-names: Alharbi
+    given-names: Shaima
+  - family-names: Alotaibi
+    given-names: Kadi
+  - family-names: Alranini
+    given-names: Aishah
+  - family-names: Alraddadi
+    given-names: Alaa
+  - family-names: Alkhulaifi
+    given-names: Rahaf
+
+repository-code: "https://github.com/CredGuard2026/CredGuard"
+
+license: MIT
