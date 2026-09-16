@@ -149,7 +149,7 @@ These techniques provide interpretable information about model classification re
 
 ### LIME Analysis
 
-<img src="Figures/LIME_EXPLANATION.jpg" alt="LIME Attack Explanation" width="600">
+<img src="Figures/LIME_Attack.jpg" alt="LIME Attack Explanation" width="600">
 
 <img src="Figures/LIME_Normal.jpg" alt="LIME Normal Explanation" width="600">
 
