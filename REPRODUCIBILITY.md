@@ -6,7 +6,7 @@ This appendix documents the data processing, feature engineering, model configur
 
 ## 1. Data Sources and Provenance
 
-CredGuard IoT integrates five heterogeneous authentication and intrusion-related data sources. Each source was processed independently before integration.
+CredGuard-IoT integrates five heterogeneous authentication and intrusion-related data sources. Each source was processed independently before integration.
 
 | # | Source | Raw Records | Role in the Dataset |
 |---|---|---:|---|
@@ -14,9 +14,9 @@ CredGuard IoT integrates five heterogeneous authentication and intrusion-related
 | 2 | Medium-Interaction SSH Honeypot (Cowrie) | 40,128 | Authentication attempts with usernames, passwords, and session-level metadata |
 | 3 | Risk-Based Authentication (RBA) | 31,269,264 | Large-scale authentication and behavioural data |
 | 4 | SSH Brute-Force Dataset | — | Targeted brute-force authentication activity |
-| 5 | Synthetic Web Authentication Logs | — | Authentication data containing normal and malicious activity |
+| 5 | Web-Based Authentication Intrusion Data | — | Authentication data containing normal and malicious activity |
 
-The five sources were integrated to construct the CredGuard IoT dataset.
+The five sources were integrated to construct the CredGuard-IoT dataset.
 
 The SSH brute-force source contains multiple password attempts associated with usernames and was processed so that individual attempts could be represented during dataset construction.
 
@@ -32,10 +32,11 @@ The integrated data were aligned to a common schema containing the following fie
 | `src_ip` | Source IP address |
 | `username` | Submitted username |
 | `password` | Submitted password |
-| `asn` | Autonomous System Number associated with the source IP |
+| `asn_encoded` | Numerical encoding of the source Autonomous System Number (ASN) |
 | `location` | Geographic location associated with the source IP |
+| `ip_type` | Classification of the source IP address as Public or Private |
 | `status` | Authentication outcome: `1` = success, `0` = failure |
-| `source` | Original dataset identifier |
+| `source` | Original dataset identifier (excluded from model training) |
 | `label` | Ground-truth class: `1` = Attack, `0` = Normal |
 
 Datasets that did not originally contain some fields were aligned to the common structure during preprocessing.
@@ -81,7 +82,7 @@ To construct the final corpus, group-based sampling was performed at the source-
 
 This approach preserves the temporal structure required for features such as inter-arrival time, cumulative statistics, login-attempt progression, and failure ratio.
 
-The resulting CredGuard IoT dataset contains approximately **1,003,030 records**.
+The resulting CredGuard-IoT dataset contains approximately **1,003,030 records**.
 
 ---
 
@@ -157,7 +158,7 @@ This encoding represents the cyclical relationship between hours of the day.
 
 Network and geographic context were included through:
 
-- `asn` — Autonomous System Number associated with the source IP.
+- `asn_encoded` — Numerical encoding of the Autonomous System Number associated with the source IP.
 - `location` — Geographic location associated with the source IP.
 
 ---
@@ -176,13 +177,15 @@ Duplicate removal is also performed before model partitioning to prevent duplica
 
 ## 7. Dataset Partitioning
 
-The integrated dataset was divided into training, validation, and test sets using the following proportions:
+To prevent information leakage caused by the same IP address appearing in both the training and testing partitions, the dataset was divided into training, validation, and test subsets (intended ratio 70–15–15) using `GroupShuffleSplit` with the IP address as the grouping variable, so that all records of a given IP were assigned to only one subset.
 
-| Partition | Proportion | Purpose |
+| Partition | Intended Proportion | Purpose |
 |---|---:|---|
 | Training | 70% | Model training |
-| Validation | 15% | Model validation and model configuration |
+| Validation | 15% | Model tuning and early stopping where applicable |
 | Test | 15% | Final performance evaluation |
+
+This grouped split provides a more realistic estimate of the models' generalization to unseen sources. Because a small number of IPs account for a large share of the records, the resulting row proportions differ from the intended ratio.
 
 For the evaluation metrics, `Attack` is treated as the positive class and `Normal` as the negative class.
 
@@ -194,38 +197,18 @@ CredGuard evaluated Machine Learning and Deep Learning models for authentication
 
 The evaluated models were:
 
+- Random Forest (RF)
 - XGBoost
-- Random Forest
 - Support Vector Machine (SVM)
 - Convolutional Neural Network (CNN)
 - Recurrent Neural Network (RNN)
 - Deep Neural Network (DNN)
 
-### 8.1 XGBoost
-
-The reported XGBoost configuration used the following parameters:
-
-| Hyperparameter | Value |
-|---|---:|
-| `objective` | `binary:logistic` |
-| `n_estimators` | 400 |
-| `learning_rate` | 0.05 |
-| `max_depth` | 8 |
-| `subsample` | 0.9 |
-| `colsample_bytree` | 0.9 |
-| `gamma` | 0.1 |
-| `min_child_weight` | 3 |
-| `early_stopping_rounds` | 20 |
-| `eval_metric` | `logloss` |
-| `random_state` | 42 |
-
-XGBoost was selected as the final model based on the reported balance between predictive performance and computational efficiency.
-
-### 8.2 Random Forest and SVM
+### 8.1 Random Forest and SVM
 
 Random Forest and SVM were implemented using scikit-learn and evaluated using the same dataset partitioning and feature representation.
 
-### 8.3 Deep Learning Models
+### 8.2 Deep Learning Models
 
 The evaluated Deep Learning models were:
 
@@ -235,7 +218,7 @@ The evaluated Deep Learning models were:
 
 These models were trained and evaluated as part of the comparative model analysis.
 
-### 8.4 LSTM
+### 8.3 LSTM
 
 An LSTM model was implemented but excluded from the reported model comparison. The report states that its sequential processing required substantially longer training time and was less suitable for the dataset characteristics used in the study.
 
@@ -287,16 +270,18 @@ where:
 
 ## 10. Model Performance
 
-The reported performance of the evaluated models on the CredGuard IoT dataset is shown below.
+The reported performance of the evaluated models on the CredGuard-IoT dataset is shown below.
 
 | Model | Accuracy | Precision | Recall | F1-Score | Training Time (s) |
 |---|---:|---:|---:|---:|---:|
-| XGBoost | 82.29% | 85.06% | 75.45% | 79.97% | 82 |
-| Random Forest | 82.03% | 86.90% | 76.02% | 81.10% | 585 |
-| SVM | 71.21% | 75.10% | 64.62% | 69.47% | 54.43 |
-| CNN | 80.50% | 77.55% | 86.60% | 81.82% | 2640.02 |
-| RNN | 80.94% | 79.04% | 84.90% | 81.87% | 3794 |
-| DNN | 80.22% | 78.07% | 84.79% | 81.29% | 2857 |
+| Random Forest | 82.00% | 79.79% | 78.44% | 79.11% | 868 |
+| XGBoost | 81.31% | 79.16% | 77.34% | 78.24% | 287 |
+| SVM | 71.53% | 67.05% | 67.77% | 67.41% | 326 |
+| CNN | 77.85% | 74.91% | 73.72% | 74.31% | 3591 |
+| RNN | 76.35% | 73.80% | 70.64% | 72.19% | 3203 |
+| DNN | 77.40% | 73.77% | 74.44% | 74.11% | 533 |
+
+Random Forest achieved the highest accuracy, precision, recall, and F1-score among all evaluated models, and was therefore selected as the final model. XGBoost required substantially less training time (287 s compared with 868 s).
 
 ---
 
@@ -309,7 +294,12 @@ The project applies:
 - **SHAP (SHapley Additive exPlanations)** for feature contribution and global feature-importance analysis.
 - **LIME (Local Interpretable Model-agnostic Explanations)** for local interpretation of individual predictions.
 
-These techniques are used to provide interpretable information about the model's classification results.
+Both techniques were integrated to interpret the predictions of the selected Random Forest model.
+
+- The Random Forest feature-importance analysis emphasized failure rate, inter-arrival time, and failed attempts.
+- The global SHAP analysis highlighted username frequency, failure rate, and location frequency as the most influential features.
+- Network-access patterns (location and ASN frequency) contributed in both analyses, while password-related features had limited influence.
+- Local LIME explanations clarify feature contributions for individual authentication decisions.
 
 ---
 
@@ -348,12 +338,15 @@ When insufficient historical data are available, rule-based heuristics are used 
 
 ## 13. Runtime Environment
 
+The implementation was carried out in Python 3.14.
+
 The project uses the following development and implementation technologies:
 
-- Python
+- Python 3.14
+- pandas
+- NumPy
 - scikit-learn
 - TensorFlow / Keras
-- XGBoost
 - SHAP
 - LIME
 - Jupyter
@@ -363,9 +356,9 @@ The project uses the following development and implementation technologies:
 - PostgreSQL
 - Flask-SQLAlchemy
 - Raspberry Pi 3 Model B+
-- Raspberry Pi Camera Module v2.1
+- Raspberry Pi camera module
 
-The Raspberry Pi Camera Module v2.1 is connected to the Raspberry Pi through the Camera Serial Interface (CSI), and the reported video configuration uses a resolution of **640 × 480 pixels**.
+The Raspberry Pi camera module is connected to the Raspberry Pi through the Camera Serial Interface (CSI), and the reported video configuration uses a resolution of **640 × 480 pixels**.
 
 The backend uses Flask with PostgreSQL through Flask-SQLAlchemy.
 
@@ -388,12 +381,14 @@ Passwords are not stored in plaintext. The implementation uses password hashing 
 
 ---
 
-## 15. IoT Decision Execution
+## 15. Prototype Testbed and Access Decision
 
-The Raspberry Pi functions as the IoT component of the system.
+The prototype testbed consists of a Raspberry Pi device connected to a camera module, a web-based authentication interface, a Flask backend server, a PostgreSQL database, and an administrative dashboard. The Raspberry Pi camera represents the protected IoT resource, while the web interface allows users to submit authentication requests.
 
-Authentication-related information is transmitted to the backend for analysis. After the backend generates an access-control decision, the Raspberry Pi receives the result and executes the corresponding action on the IoT device.
+The backend server receives each login attempt, extracts the required authentication attributes, applies the trained detection model, generates explanation outputs, stores the results, and returns the corresponding access-control decision.
 
-The Raspberry Pi Camera Module v2.1 also supports live video streaming, image snapshots, and video recording as described in the system implementation.
+When a user attempts to access the camera stream, the system collects the username, password, source IP address, and timestamp. These attributes are transmitted to the backend server, where they are transformed into the selected feature representation and classified as either normal or suspicious. If the login attempt is valid and classified as normal, access to the camera stream is granted. Otherwise, access is denied and the event is recorded for administrator review.
+
+The Raspberry Pi camera module also supports live video streaming, image snapshots, and video recording as described in the system implementation.
 
 ---
