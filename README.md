@@ -90,6 +90,17 @@ Temporal features are calculated using historical information associated with th
 
 ---
 
+## Implementation Environment
+
+The implementation was carried out in Python 3.14.
+
+- **Machine Learning models:** implemented using scikit-learn and XGBoost.
+- **Deep Learning models:** implemented using TensorFlow and Keras.
+- **Explainability:** implemented using SHAP and LIME.
+- **Data handling and numerical processing:** pandas and NumPy.
+
+---
+
 ## Machine Learning and Deep Learning Models
 
 CredGuard evaluates multiple Machine Learning and Deep Learning models for authentication-based intrusion detection.
@@ -103,11 +114,15 @@ The evaluated models are:
 - Recurrent Neural Network (RNN)
 - Deep Neural Network (DNN)
 
-The dataset is partitioned into:
+### Data Splitting
 
-- **70% Training**
-- **15% Validation**
-- **15% Testing**
+To prevent information leakage caused by the same IP address appearing in both the training and testing partitions, the dataset was divided into training, validation, and testing subsets (intended ratio **70% / 15% / 15%**) using `GroupShuffleSplit` with the **IP address as the grouping variable**. All records of a given IP address are therefore assigned to only one subset.
+
+- **Training set:** used to fit the selected ML and DL models.
+- **Validation set:** used for model tuning and early stopping where applicable.
+- **Testing set:** reserved for the final performance evaluation.
+
+This grouped split provides a more realistic estimate of the models' generalization to unseen sources. Because a small number of IP addresses account for a large share of the records, the resulting row proportions differ from the intended ratio.
 
 `Attack` is treated as the positive class and `Normal` as the negative class.
 
@@ -115,16 +130,22 @@ The dataset is partitioned into:
 
 | Model | Accuracy | Precision | Recall | F1-Score | Training Time (s) |
 |---|---:|---:|---:|---:|---:|
-| XGBoost | 82.29% | 85.06% | 75.45% | 79.97% | 82 |
-| Random Forest | 82.03% | 86.90% | 76.02% | 81.10% | 585 |
-| SVM | 71.21% | 75.10% | 64.62% | 69.47% | 54.43 |
-| CNN | 80.50% | 77.55% | 86.60% | 81.82% | 2640.02 |
-| RNN | 80.94% | 79.04% | 84.90% | 81.87% | 3794 |
-| DNN | 80.22% | 78.07% | 84.79% | 81.29% | 2857 |
+| Random Forest | 82.00% | 79.79% | 78.44% | 79.11% | 868 |
+| XGBoost | 81.31% | 79.16% | 77.34% | 78.24% | 287 |
+| SVM | 71.53% | 67.05% | 67.77% | 67.41% | 326 |
+| CNN | 77.85% | 74.91% | 73.72% | 74.31% | 3591 |
+| RNN | 76.35% | 73.80% | 70.64% | 72.19% | 3203 |
+| DNN | 77.40% | 73.77% | 74.44% | 74.11% | 533 |
 
-Based on the reported evaluation, XGBoost was selected as the final model considering the balance between predictive performance and computational efficiency.
+Random Forest achieved the highest accuracy and F1-score, while XGBoost achieved comparable performance with a substantially shorter training time (287 s compared with 868 s). XGBoost was therefore selected as the final model, considering the balance between predictive performance and computational efficiency.
 
 An LSTM model was also implemented but excluded from the reported model comparison because of its sequential processing requirements and longer training time.
+
+### Robustness Analysis
+
+The models were trained to learn the patterns of both normal and malicious login behaviour from the training data, and were then tested on their ability to detect such behaviour in unseen records.
+
+To verify that the models rely on genuine behavioural patterns rather than on specific features, additional experiments were conducted in which the **password-related features** and the **frequency-based features** were removed from the input. The results of these experiments were consistent with those of the main experiments, and no notable difference was observed in the performance of the models. This indicates that the performance of the proposed models does not depend on these features alone.
 
 ---
 
@@ -210,7 +231,9 @@ Passwords are not stored in plaintext. Password hashing and verification are use
 
 The project uses the following technologies and tools:
 
-- Python
+- Python 3.14
+- pandas
+- NumPy
 - Scikit-learn
 - TensorFlow / Keras
 - XGBoost
