@@ -4,7 +4,7 @@
 
 CredGuard is a credential-based intrusion detection system designed for IoT environments. The system analyzes authentication attempts using Machine Learning (ML), Deep Learning (DL), and Explainable Artificial Intelligence (XAI) techniques to detect potentially malicious access attempts and support secure access control.
 
-The system consists of an IoT device, a backend server, a PostgreSQL database, and a web-based interface. A Raspberry Pi connected to a Camera Module v2.1 collects authentication-related information, including IP address, username, password, and timestamp, and transmits the data to the backend server for processing and analysis.
+The system consists of an IoT device, a backend server, a PostgreSQL database, and a web-based interface. A Raspberry Pi connected to a Camera Module v2.1 represents the protected IoT resource. When a user attempts to access the camera stream, the system collects the username, password, source IP address, and timestamp and transmits them to the backend server for processing and analysis.
 
 <img src="Figures/CredGuard_Architecture.JPG" alt="CredGuard Architecture" width="800">
 
@@ -14,12 +14,12 @@ The system consists of an IoT device, a backend server, a PostgreSQL database, a
 
 The main components of CredGuard include:
 
-- **IoT Device:** A Raspberry Pi connected to a Camera Module v2.1.
-- **Backend Server:** Responsible for data processing, preprocessing, feature extraction, model analysis, and decision generation.
+- **IoT Device:** A Raspberry Pi connected to a Camera Module v2.1, representing the protected IoT resource.
+- **Backend Server:** Receives each login attempt, extracts the required authentication attributes, applies the trained detection model, generates explanation outputs, stores the results, and returns the corresponding access-control decision.
 - **Machine Learning and Deep Learning Models:** Used to classify authentication attempts as Normal or Attack.
 - **Explainable AI:** SHAP and LIME are used to interpret model predictions.
 - **PostgreSQL Database:** Stores user information, login attempts, model results, security actions, IoT-related data, and post-login behaviour records.
-- **Web Application:** Provides interfaces for the Device Owner and Administrator.
+- **Web Application:** Provides the web-based authentication interface for users and the administrative dashboard for the Administrator.
 
 The system supports two primary user roles:
 
@@ -28,15 +28,15 @@ The system supports two primary user roles:
 
 ---
 
-## CredGuard IoT Dataset
+## CredGuard-IoT Dataset
 
-CredGuard IoT is the integrated dataset developed for the project.
+CredGuard-IoT is the integrated dataset developed for the project.
 
 The dataset was constructed by integrating five authentication- and intrusion-related data sources:
 
 1. SSH Honeypot Logs
 2. Medium-Interaction SSH Honeypot (Cowrie)
-3. Synthetic Web Authentication Logs
+3. Web-Based Authentication Intrusion Data
 4. Risk-Based Authentication (RBA)
 5. SSH Brute-Force Attempt Dataset
 
@@ -107,8 +107,8 @@ CredGuard evaluates multiple Machine Learning and Deep Learning models for authe
 
 The evaluated models are:
 
+- Random Forest (RF)
 - XGBoost
-- Random Forest
 - Support Vector Machine (SVM)
 - Convolutional Neural Network (CNN)
 - Recurrent Neural Network (RNN)
@@ -137,15 +137,9 @@ This grouped split provides a more realistic estimate of the models' generalizat
 | RNN | 76.35% | 73.80% | 70.64% | 72.19% | 3203 |
 | DNN | 77.40% | 73.77% | 74.44% | 74.11% | 533 |
 
-Random Forest achieved the highest accuracy, precision, recall, and F1-score among all evaluated models, and was therefore selected as the final model. XGBoost achieved comparable performance with a substantially shorter training time (287 s compared with 868 s).
+Random Forest achieved the highest accuracy, precision, recall, and F1-score among all evaluated models, and was therefore selected as the final model. XGBoost required substantially less training time (287 s compared with 868 s).
 
 An LSTM model was also implemented but excluded from the reported model comparison because of its sequential processing requirements and longer training time.
-
-### Robustness Analysis
-
-The models were trained to learn the patterns of both normal and malicious login behaviour from the training data, and were then tested on their ability to detect such behaviour in unseen records.
-
-To verify that the models rely on genuine behavioural patterns rather than on specific features, additional experiments were conducted in which the **password-related features** and the **frequency-based features** were removed from the input. The results of these experiments were consistent with those of the main experiments, and no notable difference was observed in the performance of the models. Although frequency-based features ranked among the most influential in the SHAP analysis, the models maintained their performance without them, while password-related features had limited influence in both analyses. This indicates that the performance of the proposed models does not depend on these features alone.
 
 ---
 
@@ -205,9 +199,11 @@ High-risk sessions may be terminated or blocked according to the system's decisi
 
 The IoT component consists of a Raspberry Pi 3 Model B+ connected to a Raspberry Pi Camera Module v2.1.
 
-The Raspberry Pi collects authentication-related information and communicates with the backend server. The backend performs the required processing and analysis and generates an access-control decision.
+The prototype testbed consists of a Raspberry Pi device connected to a camera module, a web-based authentication interface, a Flask backend server, a PostgreSQL database, and an administrative dashboard. The Raspberry Pi camera represents the protected IoT resource, while the web interface allows users to submit authentication requests.
 
-The resulting decision is communicated to the IoT device and the web application. The Raspberry Pi executes the access-control decision received from the backend.
+The backend server receives each login attempt, extracts the required authentication attributes, applies the trained detection model, generates explanation outputs, stores the results, and returns the corresponding access-control decision.
+
+When a user attempts to access the camera stream, the system collects the username, password, source IP address, and timestamp. These attributes are transmitted to the backend server, where they are transformed into the selected feature representation and classified as either normal or suspicious. If the login attempt is valid and classified as normal, access to the camera stream is granted. Otherwise, access is denied and the event is recorded for administrator review.
 
 <img src="Figures/CredGuard_Testbed.png" alt="CredGuard IoT Testbed" width="800">
 
@@ -276,7 +272,7 @@ CredGuard was developed by:
 
 The repository contains the project documentation, dataset, model development notebooks, figures, and supporting files.
 
-- `Data/` — CredGuard IoT dataset and related data files
+- `Data/` — CredGuard-IoT dataset and related data files
 - `Figures/` — Project figures and visual materials
 - `Scripts/` — Model development and training notebooks
 - `README.md` — Project overview and documentation
