@@ -4,7 +4,7 @@
 
 CredGuard is a credential-based intrusion detection system designed for IoT environments. The system analyzes authentication attempts using Machine Learning (ML), Deep Learning (DL), and Explainable Artificial Intelligence (XAI) techniques to detect potentially malicious access attempts and support secure access control.
 
-The system consists of an IoT device, a backend server, a PostgreSQL database, and a web-based interface. A Raspberry Pi connected to a Camera Module v2.1 represents the protected IoT resource. When a user attempts to access the camera stream, the system collects the username, password, source IP address, and timestamp and transmits them to the backend server for processing and analysis.
+The system consists of an IoT device, a backend server, a PostgreSQL database, and a web-based interface. A Raspberry Pi connected to a camera module represents the protected IoT resource. When a user attempts to access the camera stream, the system collects the username, password, source IP address, and timestamp and transmits them to the backend server for processing and analysis.
 
 <img src="Figures/CredGuard_Architecture.JPG" alt="CredGuard Architecture" width="800">
 
@@ -14,7 +14,7 @@ The system consists of an IoT device, a backend server, a PostgreSQL database, a
 
 The main components of CredGuard include:
 
-- **IoT Device:** A Raspberry Pi connected to a Camera Module v2.1, representing the protected IoT resource.
+- **IoT Device:** A Raspberry Pi connected to a camera module, representing the protected IoT resource.
 - **Backend Server:** Receives each login attempt, extracts the required authentication attributes, applies the trained detection model, generates explanation outputs, stores the results, and returns the corresponding access-control decision.
 - **Machine Learning and Deep Learning Models:** Used to classify authentication attempts as Normal or Attack.
 - **Explainable AI:** SHAP and LIME are used to interpret model predictions.
@@ -94,7 +94,7 @@ Temporal features are calculated using historical information associated with th
 
 The implementation was carried out in Python 3.14.
 
-- **Machine Learning models:** implemented using scikit-learn and XGBoost.
+- **Machine Learning models:** implemented using scikit-learn.
 - **Deep Learning models:** implemented using TensorFlow and Keras.
 - **Explainability:** implemented using SHAP and LIME.
 - **Data handling and numerical processing:** pandas and NumPy.
@@ -197,7 +197,7 @@ High-risk sessions may be terminated or blocked according to the system's decisi
 
 ## IoT Integration
 
-The IoT component consists of a Raspberry Pi 3 Model B+ connected to a Raspberry Pi Camera Module v2.1.
+The IoT component consists of a Raspberry Pi 3 Model B+ connected to a camera module.
 
 The prototype testbed consists of a Raspberry Pi device connected to a camera module, a web-based authentication interface, a Flask backend server, a PostgreSQL database, and an administrative dashboard. The Raspberry Pi camera represents the protected IoT resource, while the web interface allows users to submit authentication requests.
 
@@ -239,7 +239,6 @@ The project uses the following technologies and tools:
 - NumPy
 - Scikit-learn
 - TensorFlow / Keras
-- XGBoost
 - SHAP
 - LIME
 - Flask
@@ -249,7 +248,7 @@ The project uses the following technologies and tools:
 - Google Colab
 - Kaggle
 - Raspberry Pi
-- Raspberry Pi Camera Module v2.1
+- Raspberry Pi camera module
 
 ---
 
