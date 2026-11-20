@@ -137,7 +137,7 @@ This grouped split provides a more realistic estimate of the models' generalizat
 | RNN | 76.35% | 73.80% | 70.64% | 72.19% | 3203 |
 | DNN | 77.40% | 73.77% | 74.44% | 74.11% | 533 |
 
-Random Forest achieved the highest accuracy and F1-score, while XGBoost achieved comparable performance with a substantially shorter training time (287 s compared with 868 s). XGBoost was therefore selected as the final model, considering the balance between predictive performance and computational efficiency.
+Random Forest achieved the highest accuracy, precision, recall, and F1-score among all evaluated models, and was therefore selected as the final model. XGBoost achieved comparable performance with a substantially shorter training time (287 s compared with 868 s).
 
 An LSTM model was also implemented but excluded from the reported model comparison because of its sequential processing requirements and longer training time.
 
@@ -145,7 +145,7 @@ An LSTM model was also implemented but excluded from the reported model comparis
 
 The models were trained to learn the patterns of both normal and malicious login behaviour from the training data, and were then tested on their ability to detect such behaviour in unseen records.
 
-To verify that the models rely on genuine behavioural patterns rather than on specific features, additional experiments were conducted in which the **password-related features** and the **frequency-based features** were removed from the input. The results of these experiments were consistent with those of the main experiments, and no notable difference was observed in the performance of the models. This indicates that the performance of the proposed models does not depend on these features alone.
+To verify that the models rely on genuine behavioural patterns rather than on specific features, additional experiments were conducted in which the **password-related features** and the **frequency-based features** were removed from the input. The results of these experiments were consistent with those of the main experiments, and no notable difference was observed in the performance of the models. Although frequency-based features ranked among the most influential in the SHAP analysis, the models maintained their performance without them, while password-related features had limited influence in both analyses. This indicates that the performance of the proposed models does not depend on these features alone.
 
 ---
 
@@ -158,7 +158,14 @@ Two XAI techniques are used:
 - **SHAP (SHapley Additive exPlanations):** Used to analyze feature contributions and global feature importance.
 - **LIME (Local Interpretable Model-Agnostic Explanations):** Used to provide local explanations for individual predictions.
 
-These techniques provide interpretable information about model classification results and support analysis of why an authentication attempt is classified as Normal or Attack.
+Both techniques were integrated to interpret the predictions of the selected Random Forest model. They provide interpretable information about model classification results and support analysis of why an authentication attempt is classified as Normal or Attack.
+
+**Key findings:**
+
+- The Random Forest feature-importance analysis emphasized failure rate, inter-arrival time, and failed attempts.
+- The global SHAP analysis highlighted username frequency, failure rate, and location frequency as the most influential features.
+- Network-access patterns (location and ASN frequency) contributed in both analyses, while password-related features had limited influence.
+- Local LIME explanations clarify feature contributions for individual authentication decisions.
 
 ### SHAP Analysis
 
