@@ -32,7 +32,7 @@ The integrated data were aligned to a common schema containing the following fie
 | `src_ip` | Source IP address |
 | `username` | Submitted username |
 | `password` | Submitted password |
-| `asn_encoded` | Numerical encoding of the source Autonomous System Number (ASN) |
+| `asn` | Numerical encoding of the source Autonomous System Number (ASN) |
 | `location` | Geographic location associated with the source IP |
 | `ip_type` | Classification of the source IP address as Public or Private |
 | `status` | Authentication outcome: `1` = success, `0` = failure |
@@ -158,8 +158,17 @@ This encoding represents the cyclical relationship between hours of the day.
 
 Network and geographic context were included through:
 
-- `asn_encoded` — Numerical encoding of the Autonomous System Number associated with the source IP.
+- `asn` — Numerical encoding of the Autonomous System Number associated with the source IP.
 - `location` — Geographic location associated with the source IP.
+
+---
+
+### 5.5 Additional Features
+
+The dataset also includes the following features:
+
+- `is_fast`
+- `is_reg`
 
 ---
 
