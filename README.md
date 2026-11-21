@@ -64,6 +64,8 @@ The dataset includes features such as:
 - Day of week
 - Hour
 - Cyclic time features
+- `is_fast`
+- `is_reg`
 
 ASN and geographic location information are obtained from the source IP address using the IPinfo service.
 
@@ -271,7 +273,7 @@ CredGuard was developed by:
 
 The repository contains the project documentation, dataset, model development notebooks, figures, and supporting files.
 
-- `Data/` — CredGuard-IoT dataset and related data files
+- `Data/` — CredGuard-IoT dataset (`CredGuard_Io_Output1.csv`, stored with Git LFS) and related data files
 - `Figures/` — Project figures and visual materials
 - `Scripts/` — Model development and training notebooks
 - `README.md` — Project overview and documentation
