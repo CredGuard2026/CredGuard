@@ -1,0 +1,27 @@
+# Trained model artefacts
+Models/*
+!Models/.gitkeep
+
+# Dataset files
+Data/raw/
+Data/CredGuard_IoT.csv
+Data/CredGuard_IoT_features.csv
+
+# Local results and recordings
+results/
+IoT/recordings/
+
+# Environment and secrets
+.env
+*.env
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.ipynb_checkpoints/
+
+# OS
+.DS_Store
+Thumbs.db
